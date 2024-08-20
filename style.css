@@ -7,6 +7,7 @@ body {
   height: 100vh;
 }
 .form-submit {
+  margin-top: 1rem;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -26,16 +27,18 @@ body {
 .doors {
   display: flex;
   overflow: hidden;
+  width: 100%;
+  height: 100%;
 }
 .leftDoor {
   background-color: rgb(23, 21, 25);
-  width: 50px;
-  height: 120px;
+  width: 50%;
+  height: 100%;
 }
 .rightDoor {
   background-color: rgb(23, 21, 25);
-  width: 50px;
-  height: 120px;
+  width: 50%;
+  height: 100%;
 }
 .floorcontrollers {
   display: flex;
@@ -61,4 +64,33 @@ button {
 }
 .downBtn {
   background-color: #ffa107;
+}
+@media (max-width: 600px) {
+  #simulation {
+    padding: 20px;
+  }
+  .form-submit {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .lift {
+    width: 80px;
+    height: 100px;
+  }
+
+  .leftDoor,
+  .rightDoor {
+    width: 50%;
+    height: 100%;
+  }
+
+  .liftContainer {
+    gap: 1rem;
+  }
+
+  button {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
 }
