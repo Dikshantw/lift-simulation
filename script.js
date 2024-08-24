@@ -3,6 +3,17 @@ function handleSubmit() {
   const noOfLifts = document.getElementById("liftValue").value;
   const noOfFloors = document.getElementById("floorsValue").value;
   simulation.innerHTML = "";
+
+  if (floorsValue < 2) {
+    alert("Number of floors must be at least 2.");
+    return;
+  }
+
+  if (liftValue < 1) {
+    alert("Number of lifts must be at least 1.");
+    return;
+  }
+
   if (
     isNaN(noOfFloors) ||
     isNaN(noOfLifts) ||
