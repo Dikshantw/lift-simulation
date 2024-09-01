@@ -7,18 +7,13 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <div class="form-submit">
-      <div>
-        <label for="liftValue">No. Of Lifts</label>
-        <input id="liftValue" type="number" />
-      </div>
-      <div>
-        <label for="floorsValue">No. Of Floors</label>
-        <input id="floorsValue" type="number" />
-      </div>
-      <button onclick="handleSubmit()">Submit</button>
+    <div class="form">
+      <label for="number-of-lifts">Number of Lifts:</label>
+      <input type="number" placeholder="lift" id="number-of-lifts" min="1" />
+      <label for="number-of-floors">Number of Floors:</label>
+      <input type="number" placeholder="floor" id="number-of-floors" min="2" />
+      <button onclick="handleSubmission()">submit</button>
     </div>
-
     <div id="simulation"></div>
     <script src="script.js"></script>
   </body>
