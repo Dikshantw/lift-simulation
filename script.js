@@ -119,9 +119,10 @@ function getAvailabelLift(Lift, BtnQueue, button) {
     let currentDistance = Math.abs(currentLift.currentFloor - targetfloor);
     return currentDistance < closestDistance ? currentLift : closest;
   });
+  console.log(closestLift);
 
   closestLift.queue.push({ targetfloor, button });
-  console.log(closestLift);
+  console.log("nearest lift", closestLift);
   processQueue(closestLift);
 
   BtnQueue.shift();
@@ -137,6 +138,7 @@ function processQueue(lift) {
 
 function moveLift(lift, targetFloor, button) {
   lift.isMoving = true;
+  console.log("moveLift=", lift);
 
   const transformValue = lift.element.style.transform;
   const currentY = transformValue
@@ -151,7 +153,7 @@ function moveLift(lift, targetFloor, button) {
   lift.element.style.transition = `all ${floorsToMove * 2}s linear`;
 
   // Update the lift's current floor in the Lift array
-  Lift.currentFloor = targetFloor;
+  lift.currentFloor = targetFloor;
   let time = floorsToMove * 2000;
   setTimeout(() => {
     openDoors(lift);
