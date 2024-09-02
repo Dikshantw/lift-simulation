@@ -121,50 +121,59 @@ function getAvailabelLift(Lift, BtnQueue, button) {
   });
 
   closestLift.queue.push({ targetfloor, button });
+  console.log(closestLift);
   processQueue(closestLift);
 
   BtnQueue.shift();
 }
 
 function processQueue(lift) {
+  console.log("thus is qure", lift.queue);
   if (lift.isMoving || lift.queue.length === 0) return;
 
   const request = lift.queue[0];
   moveLift(lift, request.targetfloor, request.button);
 }
 
-async function moveLift(lift, targetFloor, button) {
+function moveLift(lift, targetFloor, button) {
   lift.isMoving = true;
-  lift.targetFloor = targetFloor;
 
-  while (lift.currentFloor !== lift.targetFloor) {
-    const nextFloor =
-      lift.currentFloor < lift.targetFloor
-        ? lift.currentFloor + 1
-        : lift.currentFloor - 1;
-    updatePosition(lift, nextFloor);
-    await new Promise((r) => setTimeout(r, 2000)); // 2 seconds per floor
-    lift.currentFloor = nextFloor;
-  }
+  const transformValue = lift.element.style.transform;
+  const currentY = transformValue
+    ? parseFloat(transformValue.match(/-?\d+\.?\d*/)[0])
+    : 0;
 
-  openDoors(lift);
+  const targetY = -100.8 * (targetFloor - 1);
+  const floorsToMove = Math.abs((targetY - currentY) / 100.8);
 
+  // Move the lift in the DOM
+  lift.element.style.transform = `translateY(${targetY}px)`;
+  lift.element.style.transition = `all ${floorsToMove * 2}s linear`;
+
+  // Update the lift's current floor in the Lift array
+  Lift.currentFloor = targetFloor;
+  let time = floorsToMove * 2000;
   setTimeout(() => {
-    closeDoors(lift);
+    openDoors(lift);
 
     setTimeout(() => {
-      button.style.backgroundColor = "";
-      button.disabled = false;
-      lift.queue.shift();
-      lift.isMoving = false;
-      processQueue(lift);
-    }, 2500); // Door closing time
-  }, 2500); // Door open time
+      closeDoors(lift);
+
+      setTimeout(() => {
+        button.style.backgroundColor = "";
+        button.disabled = false;
+        lift.queue.shift();
+        lift.isMoving = false;
+        processQueue(lift);
+      }, 2500); // Door closing time
+    }, 2500); // Door open time
+  }, time);
 }
 
 function updatePosition(lift, nextFloor) {
   lift.element.style.transform = `translateY(${-(nextFloor - 1) * 100.8}px)`; // assuming floor height is 140px
   lift.element.style.transition = `transform 2s linear`; // assuming 2 seconds per floor
+  console.log("updating position");
 }
 
 function openDoors(lift) {
