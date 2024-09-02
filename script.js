@@ -1,5 +1,6 @@
 let BtnQueue = [];
 let Lift = [];
+
 function handleSubmission() {
   BtnQueue = [];
   Lift = [];
@@ -66,6 +67,7 @@ function addFloors(floorValue, liftValue, simulation) {
 function addLifts(liftValue, floor) {
   const liftContainer = document.createElement("div");
   liftContainer.classList.add("liftContainer");
+
   for (let i = 1; i <= liftValue; i++) {
     const lift = document.createElement("div");
     lift.classList.add("lift");
@@ -77,11 +79,15 @@ function addLifts(liftValue, floor) {
     const rightDoor = document.createElement("div");
     rightDoor.classList.add("rightDoor");
     lift.appendChild(rightDoor);
+
     Lift.push({
       liftId: i,
       isMoving: false,
       currentFloor: 1,
+      queue: [],
+      element: lift,
     });
+
     liftContainer.appendChild(lift);
   }
   floor.appendChild(liftContainer);
@@ -94,114 +100,91 @@ function handleLiftRequest(targetfloor, button) {
 }
 
 function getAvailabelLift(Lift, BtnQueue, button) {
-  // Filter the lifts that are not moving
   let nonMovingLifts = Lift.filter((lift) => !lift.isMoving);
 
   if (nonMovingLifts.length === 0) {
     setTimeout(() => {
       getAvailabelLift(Lift, BtnQueue, button);
     }, 1000);
-
     return;
   }
-  // Get the first request from the BtnQueue
+
   let { targetfloor } = BtnQueue[0];
 
-  // Find the closest lift to the target floor, or the lift on the target floor
-  let closestLiftData = nonMovingLifts.reduce((closest, currentLift) => {
+  let closestLift = nonMovingLifts.reduce((closest, currentLift) => {
     if (currentLift.currentFloor === targetfloor) {
-      return currentLift; // Prioritize lift already on the target floor
+      return currentLift;
     }
     let closestDistance = Math.abs(closest.currentFloor - targetfloor);
     let currentDistance = Math.abs(currentLift.currentFloor - targetfloor);
-
     return currentDistance < closestDistance ? currentLift : closest;
   });
 
-  const closestLiftElement = document.querySelector(
-    `.lift[data-lift-id='${closestLiftData.liftId}']`
-  );
+  closestLift.queue.push({ targetfloor, button });
+  processQueue(closestLift);
 
-  if (closestLiftData.currentFloor === targetfloor) {
-    DoorAnimation(0, closestLiftElement).then(() => {
-      Lift[closestLiftData.liftId - 1].isMoving = false;
-      button.disabled = false;
-    });
-  } else {
-    moveLift(closestLiftElement, targetfloor, button);
-  }
-
-  // Remove the processed request from the BtnQueue
   BtnQueue.shift();
 }
 
-function moveLift(closestLiftElement, targetfloor, button) {
-  // Find the corresponding lift data in the Lift array using liftId
-  const liftId = closestLiftElement.getAttribute("data-lift-id");
-  const liftIndex = Lift.findIndex((lift) => lift.liftId == liftId);
+function processQueue(lift) {
+  if (lift.isMoving || lift.queue.length === 0) return;
 
-  if (liftIndex === -1) {
-    return;
-  }
-
-  // Set the selected lift as moving
-  Lift[liftIndex].isMoving = true;
-
-  const transformValue = closestLiftElement.style.transform;
-  const currentY = transformValue
-    ? parseFloat(transformValue.match(/-?\d+\.?\d*/)[0])
-    : 0;
-
-  const targetY = -100.8 * (targetfloor - 1);
-  const floorsToMove = Math.abs((targetY - currentY) / 100.8);
-
-  // Move the lift in the DOM
-  closestLiftElement.style.transform = `translateY(${targetY}px)`;
-  closestLiftElement.style.transition = `all ${floorsToMove * 2}s linear`;
-
-  // Update the lift's current floor in the Lift array
-  Lift[liftIndex].currentFloor = targetfloor;
-
-  // Add an event listener for when the lift movement is finished
-  closestLiftElement.addEventListener(
-    "transitionend",
-    function onTransitionEnd() {
-      // Remove the event listener after it's triggered
-      closestLiftElement.removeEventListener("transitionend", onTransitionEnd);
-
-      // Execute the DoorAnimation after the lift has finished moving
-      DoorAnimation(floorsToMove, closestLiftElement).then(() => {
-        // Set the lift as not moving after the door animation is complete
-        Lift[liftIndex].isMoving = false;
-        button.disabled = false;
-      });
-    }
-  );
+  const request = lift.queue[0];
+  moveLift(lift, request.targetfloor, request.button);
 }
 
-function DoorAnimation(floorsToMove, availableLift) {
-  return new Promise((resolve) => {
-    let leftDoor = availableLift.querySelector(".leftDoor");
-    let rightDoor = availableLift.querySelector(".rightDoor");
+async function moveLift(lift, targetFloor, button) {
+  lift.isMoving = true;
+  lift.targetFloor = targetFloor;
+
+  while (lift.currentFloor !== lift.targetFloor) {
+    const nextFloor =
+      lift.currentFloor < lift.targetFloor
+        ? lift.currentFloor + 1
+        : lift.currentFloor - 1;
+    updatePosition(lift, nextFloor);
+    await new Promise((r) => setTimeout(r, 2000)); // 2 seconds per floor
+    lift.currentFloor = nextFloor;
+  }
+
+  openDoors(lift);
+
+  setTimeout(() => {
+    closeDoors(lift);
 
     setTimeout(() => {
-      leftDoor.style.transform = `translateX(-50px)`;
-      rightDoor.style.transform = `translateX(50px)`;
+      button.style.backgroundColor = "";
+      button.disabled = false;
+      lift.queue.shift();
+      lift.isMoving = false;
+      processQueue(lift);
+    }, 2500); // Door closing time
+  }, 2500); // Door open time
+}
 
-      leftDoor.style.transition = `all 2.5s ease-in-out`;
-      rightDoor.style.transition = `all 2.5s ease-in-out`;
-    }, 1000);
+function updatePosition(lift, nextFloor) {
+  lift.element.style.transform = `translateY(${-(nextFloor - 1) * 100.8}px)`; // assuming floor height is 140px
+  lift.element.style.transition = `transform 2s linear`; // assuming 2 seconds per floor
+}
 
-    setTimeout(() => {
-      leftDoor.style.transform = `translateX(0px)`;
-      rightDoor.style.transform = `translateX(0px)`;
+function openDoors(lift) {
+  lift.element.querySelector(".leftDoor").style.transform = `translateX(-30px)`;
+  lift.element.querySelector(".rightDoor").style.transform = `translateX(30px)`;
+  lift.element.querySelector(
+    ".leftDoor"
+  ).style.transition = `all 2.5s ease-in-out`;
+  lift.element.querySelector(
+    ".rightDoor"
+  ).style.transition = `all 2.5s ease-in-out`;
+}
 
-      leftDoor.style.transition = `all 2.5s ease-in-out`;
-      rightDoor.style.transition = `all 2.5s ease-in-out`;
-
-      setTimeout(() => {
-        resolve();
-      }, 2500);
-    }, 2500);
-  });
+function closeDoors(lift) {
+  lift.element.querySelector(".leftDoor").style.transform = `translateX(0px)`;
+  lift.element.querySelector(".rightDoor").style.transform = `translateX(0px)`;
+  lift.element.querySelector(
+    ".leftDoor"
+  ).style.transition = `all 2.5s ease-in-out`;
+  lift.element.querySelector(
+    ".rightDoor"
+  ).style.transition = `all 2.5s ease-in-out`;
 }
